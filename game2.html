@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>KISA & KOTYA</title>
+
+<style>
+html, body{
+  margin:0; padding:0; height:100%;
+  overflow:hidden;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(180deg, #ffd6e7, #ffeef5);
+}
+
+/* Плавающие сердечки */
+.heart{
+  position:fixed;
+  font-size:20px;
+  animation: floatUp 6s linear infinite;
+  opacity:0.7;
+}
+
+@keyframes floatUp{
+  from{ transform:translateY(100vh); opacity:0; }
+  10%{ opacity:0.8; }
+  to{ transform:translateY(-10vh); opacity:0; }
+}
+
+#app{
+  position:fixed; inset:0;
+  display:flex;
+  flex-direction:column;
+}
+
+.header{
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(6px);
+}
+
+.title{
+  font-weight:900;
+  font-size:16px;
+  color:#ff4d8d;
+}
+
+.hearts{
+  font-size:20px;
+}
+
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:18px;
+}
+
+.card{
+  background:white;
+  border-radius:24px;
+  padding:20px;
+  box-shadow:0 15px 40px rgba(255, 100, 150, 0.3);
+}
+
+.sceneTop{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:10px;
+}
+
+.cat{
+  width:60px; height:60px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+  background:#ffe6f0;
+  font-size:30px;
+}
+
+.sceneName{
+  font-weight:900;
+  font-size:15px;
+  color:#ff4d8d;
+}
+
+.sceneHint{
+  font-size:12px;
+  color:#ff85b3;
+}
+
+.text{
+  margin-top:12px;
+  font-size:15px;
+  color:#5c2a3b;
+}
+
+.choices{
+  margin-top:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.choiceBtn{
+  padding:14px;
+  border-radius:18px;
+  border:none;
+  background:#ffe6f0;
+  color:#5c2a3b;
+  font-weight:700;
+  font-size:14px;
+}
+
+.choiceBtn:active{
+  transform:scale(0.98);
+}
+
+.toast{
+  margin-top:10px;
+  font-size:13px;
+  color:#d63384;
+}
+
+.footer{
+  margin-top:14px;
+  display:flex;
+  gap:10px;
+}
+
+.smallBtn{
+  flex:1;
+  padding:12px;
+  border-radius:18px;
+  border:none;
+  background:#ff4d8d;
+  color:white;
+  font-weight:900;
+}
+
+.smallBtn.secondary{
+  background:#ffd6e7;
+  color:#5c2a3b;
+}
+
+.overlay{
+  position:fixed; inset:0;
+  background:rgba(255, 200, 220, 0.95);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
+.big{
+  background:white;
+  padding:30px;
+  border-radius:30px;
+  box-shadow:0 20px 50px rgba(255,100,150,0.4);
+}
+
+.code{
+  font-size:48px;
+  font-weight:900;
+  color:#ff4d8d;
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+  <div class="header">
+    <div class="title">KISA & KOTYA 💗</div>
+    <div class="hearts" id="hearts">♡ ♡ ♡</div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="sceneTop">
+        <div class="cat" id="catIcon">🐱</div>
+        <div>
+          <div class="sceneName" id="sceneName"></div>
+          <div class="sceneHint" id="sceneHint"></div>
+        </div>
+      </div>
+
+      <div class="text" id="sceneText"></div>
+      <div class="choices" id="choices"></div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="footer">
+      <button class="smallBtn secondary" id="restartBtn">Сначала</button>
+      <button class="smallBtn" id="skipBtn">Подсказка</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="big">
+    <h2>Ты собрал 3 сердца 💕</h2>
+    <div class="code">C4</div>
+    <p>Котя гордится тобой 😽</p>
+  </div>
+</div>
+
+<script>
+// Плавающие сердечки
+function createHeart(){
+  const heart=document.createElement("div");
+  heart.className="heart";
+  heart.innerText="💗";
+  heart.style.left=Math.random()*100+"vw";
+  heart.style.fontSize=(16+Math.random()*20)+"px";
+  document.body.appendChild(heart);
+  setTimeout(()=>heart.remove(),6000);
+}
+setInterval(createHeart,800);
+
+// Сцены
+const scenes=[
+{
+name:"Возвращение",
+hint:"Иногда любовь — это тишина.",
+text:"Ночь. Киса возвращается уставший. Котя смотрит на него и чувствует: сейчас важнее всего — тепло.",
+choices:[
+{t:"Молча сделать чай и сесть рядом",ok:true,msg:"Вот оно. Спокойствие."},
+{t:"Начать расспрашивать с порога",ok:false,msg:"Слишком резко."},
+{t:"Сказать «ну ты как обычно»",ok:false,msg:"Не сегодня 😼"},
+{t:"Уйти в телефон",ok:false,msg:"Он не невидимый."}
+]
+},
+{
+name:"Ближе",
+hint:"Настоящее — всегда простое.",
+text:"Киса молчит, но в его взгляде тепло. Что делает Котя?",
+choices:[
+{t:"Подойти и просто обнять",ok:true,msg:"Точно."},
+{t:"Сказать длинную речь",ok:false,msg:"Лишнее."},
+{t:"Пошутить резко",ok:false,msg:"Не тот момент."},
+{t:"Ждать первого шага от него",ok:false,msg:"Иногда шаг — за тобой."}
+]
+},
+{
+name:"Ваши слова",
+hint:"Скажи сердцем.",
+text:"Уже легче. Он улыбается. Что звучит по-настоящему?",
+choices:[
+{t:"«Киса… я твоя Котя. И я рядом.»",ok:true,msg:"Идеально."},
+{t:"«Ну ладно, живи»",ok:false,msg:"Ахаха, но нет."},
+{t:"«С днём рождения, гражданин»",ok:false,msg:"Слишком официально."},
+{t:"«Докажи любовь»",ok:false,msg:"Не сегодня 😽"}
+]
+}
+];
+
+let step=0,hearts=0;
+const heartsEl=document.getElementById("hearts");
+const sceneNameEl=document.getElementById("sceneName");
+const sceneHintEl=document.getElementById("sceneHint");
+const sceneTextEl=document.getElementById("sceneText");
+const choicesEl=document.getElementById("choices");
+const toastEl=document.getElementById("toast");
+const overlay=document.getElementById("overlay");
+
+function renderHearts(){
+heartsEl.textContent=Array.from({length:3},(_,i)=>i<hearts?"💗":"♡").join(" ");
+}
+
+function renderScene(){
+const s=scenes[step];
+sceneNameEl.textContent=s.name;
+sceneHintEl.textContent=s.hint;
+sceneTextEl.textContent=s.text;
+choicesEl.innerHTML="";
+toastEl.textContent="";
+s.choices.forEach(c=>{
+const btn=document.createElement("button");
+btn.className="choiceBtn";
+btn.textContent=c.t;
+btn.onclick=()=>choose(c);
+choicesEl.appendChild(btn);
+});
+}
+
+function choose(c){
+if(c.ok){
+hearts++; renderHearts();
+setTimeout(()=>{
+step++;
+if(step>=scenes.length){
+localStorage.setItem("game2Complete","true");
+overlay.style.display="flex";
+setTimeout(()=>window.location.href="game3.html",3000);
+}else renderScene();
+},600);
+}else{
+toastEl.textContent="Попробуй иначе 💗";
+}
+}
+
+renderHearts();
+renderScene();
+</script>
+</body>
+</html>

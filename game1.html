@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>SOCHI METALLIC</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    background: black;
+    font-family: Arial, sans-serif;
+}
+
+/* Игровое поле */
+#game {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #0a0a0f, #111);
+}
+
+/* Ночной город */
+.city {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(to top, #000, transparent);
+}
+
+.building {
+    position: absolute;
+    bottom: 0;
+    width: 40px;
+    background: #111;
+}
+
+/* Дорога */
+.road {
+    position: absolute;
+    width: 70%;
+    height: 100%;
+    left: 15%;
+    background: #1a1a1a;
+    border-left: 5px solid #ff2e63;
+    border-right: 5px solid #ff2e63;
+}
+
+/* Разметка */
+.road-line {
+    position: absolute;
+    width: 6px;
+    height: 60px;
+    background: white;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Машина */
+.car {
+    position: absolute;
+    width: 60px;
+    height: 100px;
+    bottom: 130px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+}
+
+.car-body {
+    width: 100%;
+    height: 100%;
+    background: #1c3937;
+    border-radius: 15px;
+    box-shadow: 0 0 25px #00ffcc;
+    position: relative;
+}
+
+.window {
+    position: absolute;
+    width: 60%;
+    height: 30%;
+    background: #cfd8dc;
+    top: 15%;
+    left: 20%;
+    border-radius: 6px;
+}
+
+.light {
+    position: absolute;
+    width: 10px;
+    height: 18px;
+    background: yellow;
+    bottom: 8px;
+    border-radius: 4px;
+}
+
+.left-light { left: 10px; }
+.right-light { right: 10px; }
+
+/* Препятствия */
+.obstacle {
+    position: absolute;
+    width: 60px;
+    height: 100px;
+    background: #ff2e63;
+    border-radius: 15px;
+    box-shadow: 0 0 15px red;
+    z-index: 4;
+}
+
+/* Счёт */
+#score {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    text-align: center;
+    color: #00ffcc;
+    font-size: 20px;
+    font-weight: bold;
+    z-index: 10;
+}
+
+/* Кнопки */
+.controls {
+    position: absolute;
+    bottom: 25px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 25px;
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+.control-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    font-size: 36px;
+    font-weight: bold;
+    background: #ff2e63;
+    color: white;
+    box-shadow: 0 0 20px #ff2e63;
+}
+
+/* Финальное сообщение */
+#overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    text-align: center;
+}
+
+#finalMessage {
+    color: #00ffcc;
+    font-size: 26px;
+    font-weight: bold;
+    animation: glow 1.5s infinite alternate;
+}
+
+@keyframes glow {
+    from { text-shadow: 0 0 10px #00ffcc; }
+    to { text-shadow: 0 0 25px #00ffcc; }
+}
+</style>
+</head>
+<body>
+
+<div id="game">
+
+    <div class="city" id="city"></div>
+    <div class="road"></div>
+
+    <div id="score">Distance: 0 / 20</div>
+
+    <div class="car" id="car">
+        <div class="car-body">
+            <div class="window"></div>
+            <div class="light left-light"></div>
+            <div class="light right-light"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" id="leftBtn">◀</button>
+        <button class="control-btn" id="rightBtn">▶</button>
+    </div>
+
+</div>
+
+<div id="overlay">
+    <div id="finalMessage"></div>
+</div>
+
+<script>
+let car = document.getElementById("car");
+let scoreDisplay = document.getElementById("score");
+let overlay = document.getElementById("overlay");
+let finalMessage = document.getElementById("finalMessage");
+let leftBtn = document.getElementById("leftBtn");
+let rightBtn = document.getElementById("rightBtn");
+
+let roadLeft = window.innerWidth * 0.15 + 5;
+let roadRight = window.innerWidth * 0.85 - 65;
+
+let carPosition = window.innerWidth / 2 - 30;
+let score = 0;
+let maxScore = 20;
+let gameActive = true;
+
+/* Создание зданий */
+for (let i = 0; i < 15; i++) {
+    let building = document.createElement("div");
+    building.classList.add("building");
+    building.style.left = i * 30 + "px";
+    building.style.height = 50 + Math.random() * 100 + "px";
+    document.getElementById("city").appendChild(building);
+}
+
+/* Разметка */
+for (let i = 0; i < 15; i++) {
+    let line = document.createElement("div");
+    line.classList.add("road-line");
+    line.style.top = i * 80 + "px";
+    document.getElementById("game").appendChild(line);
+}
+
+setInterval(() => {
+    document.querySelectorAll(".road-line").forEach(line => {
+        let top = parseInt(line.style.top);
+        top += 15;
+        if (top > window.innerHeight) top = -60;
+        line.style.top = top + "px";
+    });
+}, 40);
+
+/* Управление */
+leftBtn.onclick = () => {
+    if (!gameActive) return;
+    carPosition -= 35;
+    if (carPosition < roadLeft) carPosition = roadLeft;
+    car.style.left = carPosition + "px";
+};
+
+rightBtn.onclick = () => {
+    if (!gameActive) return;
+    carPosition += 35;
+    if (carPosition > roadRight) carPosition = roadRight;
+    car.style.left = carPosition + "px";
+};
+
+/* Препятствия */
+function createObstacle() {
+    if (!gameActive) return;
+
+    let obstacle = document.createElement("div");
+    obstacle.classList.add("obstacle");
+    obstacle.style.left = roadLeft + Math.random() * (roadRight - roadLeft) + "px";
+    obstacle.style.top = "-100px";
+    document.getElementById("game").appendChild(obstacle);
+
+    let interval = setInterval(() => {
+        if (!gameActive) {
+            clearInterval(interval);
+            return;
+        }
+
+        let top = parseInt(obstacle.style.top);
+        top += 12;
+        obstacle.style.top = top + "px";
+
+        let carRect = car.getBoundingClientRect();
+        let obsRect = obstacle.getBoundingClientRect();
+
+        if (
+            carRect.left < obsRect.right &&
+            carRect.right > obsRect.left &&
+            carRect.top < obsRect.bottom &&
+            carRect.bottom > obsRect.top
+        ) {
+            endGame(false);
+        }
+
+        if (top > window.innerHeight) {
+            obstacle.remove();
+            score++;
+            scoreDisplay.innerText = "Distance: " + score + " / 20";
+
+            if (score >= maxScore) {
+                endGame(true);
+            }
+
+            clearInterval(interval);
+        }
+
+    }, 20);
+}
+
+function endGame(win) {
+    gameActive = false;
+
+    overlay.style.display = "flex";
+
+    if (win) {
+        localStorage.setItem("game1Complete", "true");
+        finalMessage.innerHTML = "КОД ПОЛУЧЕН<br><br>S0";
+        setTimeout(() => {
+            window.location.href = "game2.html";
+        }, 3500);
+    } else {
+        finalMessage.innerHTML = "СТОЛКНОВЕНИЕ";
+        setTimeout(() => location.reload(), 2000);
+    }
+}
+
+setInterval(createObstacle, 900);
+</script>
+
+</body>
+</html>

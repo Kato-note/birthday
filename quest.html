@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>FINAL ACCESS // QUEST</title>
+
+<style>
+  html, body{
+    margin:0; padding:0; height:100%;
+    overflow:hidden;
+    font-family: Arial, sans-serif;
+    background:#070814;
+    color:#eaf7ff;
+  }
+
+  /* layout */
+  #app{
+    position:fixed; inset:0;
+    display:flex;
+    flex-direction:column;
+    background:
+      radial-gradient(1200px 600px at 50% 0%, rgba(255,46,99,0.20), transparent 55%),
+      radial-gradient(900px 500px at 80% 40%, rgba(125,255,218,0.15), transparent 60%),
+      linear-gradient(180deg, #070814 0%, #05060a 50%, #090a12 100%);
+  }
+
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:12px 12px;
+    background: rgba(10,12,18,0.78);
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(6px);
+  }
+  .brand{
+    font-weight:1000;
+    letter-spacing:0.7px;
+    color:#7dffda;
+    text-shadow: 0 0 18px rgba(125,255,218,0.30);
+    font-size:14px;
+    white-space:nowrap;
+  }
+  .meta{
+    display:flex; align-items:center; gap:10px;
+    font-size:12px;
+    opacity:0.9;
+    white-space:nowrap;
+  }
+
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    background: rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+  }
+
+  .main{
+    flex:1;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:14px;
+  }
+
+  /* stage card */
+  .card{
+    width:min(620px, 94vw);
+    background: rgba(10,12,18,0.86);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:22px;
+    box-shadow: 0 18px 70px rgba(0,0,0,0.65);
+    overflow:hidden;
+  }
+
+  .cardTop{
+    padding:14px 14px 12px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    background: linear-gradient(90deg, rgba(255,46,99,0.14), rgba(125,255,218,0.10));
+  }
+
+  .icon{
+    width:52px; height:52px;
+    border-radius:18px;
+    display:grid;
+    place-items:center;
+    background: rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+    font-size:22px;
+    flex: 0 0 auto;
+  }
+
+  .titleWrap{ min-width:0; }
+  .stageTitle{
+    font-weight:1000;
+    letter-spacing:0.3px;
+    font-size:15px;
+    margin-bottom:4px;
+    color:#ff2e63;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .stageSub{
+    font-size:12px;
+    opacity:0.85;
+    line-height:1.25;
+  }
+
+  .cardBody{
+    padding:14px;
+  }
+
+  .prompt{
+    font-size:15px;
+    line-height:1.38;
+    white-space:pre-wrap;
+    margin-bottom:12px;
+  }
+
+  .panel{
+    background: rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:18px;
+    padding:12px;
+  }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .input{
+    flex:1;
+    min-width: 180px;
+    padding:12px 12px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.16);
+    background: rgba(0,0,0,0.25);
+    color:#eaf7ff;
+    font-size:15px;
+    font-weight:800;
+    outline:none;
+  }
+  .input::placeholder{ opacity:0.55; }
+
+  .btn{
+    padding:12px 12px;
+    border-radius:16px;
+    border:none;
+    font-weight:1000;
+    cursor:pointer;
+  }
+  .btn.primary{
+    background:#7dffda;
+    color:#0b0d14;
+  }
+  .btn.secondary{
+    background: rgba(255,255,255,0.10);
+    color:#eaf7ff;
+    border:1px solid rgba(255,255,255,0.16);
+  }
+  .btn.danger{
+    background: rgba(255,46,99,0.22);
+    border:1px solid rgba(255,46,99,0.38);
+    color:#ffd6e7;
+  }
+
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .choice{
+    text-align:left;
+    width:100%;
+    padding:12px 12px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.07);
+    color:#eaf7ff;
+    font-weight:900;
+  }
+
+  .toast{
+    margin-top:10px;
+    font-size:13px;
+    min-height:18px;
+    opacity:0.92;
+  }
+  .toast.ok{ color:#7dffda; }
+  .toast.no{ color:#ff86a9; }
+
+  .cardFooter{
+    padding:12px 14px 14px;
+    border-top:1px solid rgba(255,255,255,0.10);
+    display:flex;
+    gap:10px;
+  }
+
+  /* journal drawer */
+  .drawer{
+    position:fixed;
+    top:0; right:0; bottom:0;
+    width:min(360px, 92vw);
+    background: rgba(10,12,18,0.92);
+    border-left:1px solid rgba(255,255,255,0.14);
+    box-shadow: -20px 0 70px rgba(0,0,0,0.65);
+    transform: translateX(105%);
+    transition: transform 220ms ease;
+    z-index:60;
+    display:flex;
+    flex-direction:column;
+  }
+  .drawer.open{ transform: translateX(0); }
+
+  .drawerTop{
+    padding:14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+  }
+  .drawerTitle{
+    font-weight:1000;
+    color:#7dffda;
+    letter-spacing:0.6px;
+  }
+  .drawerBody{ padding:14px; overflow:auto; }
+  .chipRow{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    padding:8px 10px;
+    border-radius:999px;
+    background: rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+    font-weight:1000;
+    letter-spacing:0.3px;
+  }
+  .muted{
+    opacity:0.75;
+    font-size:12px;
+    line-height:1.25;
+    margin-top:10px;
+  }
+
+  /* final letter overlay */
+  .overlay{
+    position:fixed; inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background: rgba(0,0,0,0.80);
+    z-index:100;
+  }
+  .letterWrap{
+    width:min(680px, 94vw);
+    border-radius:26px;
+    overflow:hidden;
+    box-shadow: 0 22px 100px rgba(0,0,0,0.75);
+    background: linear-gradient(180deg, #ffeef5, #ffd6e7);
+    color:#3b1a27;
+    border:1px solid rgba(255,255,255,0.65);
+    position:relative;
+  }
+  .letterTop{
+    padding:14px 16px;
+    background: rgba(255,255,255,0.55);
+    border-bottom:1px solid rgba(0,0,0,0.06);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .letterTitle{
+    font-weight:1000;
+    color:#ff4d8d;
+    letter-spacing:0.4px;
+  }
+  .seal{
+    font-weight:1000;
+    color:#ff4d8d;
+    background: rgba(255,77,141,0.14);
+    border:1px solid rgba(255,77,141,0.35);
+    padding:6px 10px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .paper{
+    padding:16px 16px 18px;
+    font-size:15px;
+    line-height:1.5;
+    white-space:pre-wrap;
+  }
+  .letterBtns{
+    padding:14px 16px 16px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .letterBtn{
+    flex:1;
+    min-width: 160px;
+    padding:12px 12px;
+    border-radius:18px;
+    border:none;
+    font-weight:1000;
+  }
+  .letterBtn.pink{
+    background:#ff4d8d;
+    color:white;
+  }
+  .letterBtn.soft{
+    background: rgba(255,255,255,0.6);
+    border:1px solid rgba(0,0,0,0.08);
+    color:#3b1a27;
+  }
+  .heartsFX{
+    position:absolute; inset:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .h{
+    position:absolute;
+    bottom:-20px;
+    font-size:22px;
+    opacity:0.0;
+    animation: floatUp 2200ms ease-in forwards;
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(0); opacity:0; }
+    15%{ opacity:0.95; }
+    100%{ transform: translateY(-420px); opacity:0; }
+  }
+</style>
+</head>
+
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="brand">FINAL ACCESS // QUEST</div>
+    <div class="meta">
+      <div class="pill" id="progressPill">этап 1/8</div>
+      <button class="btn secondary" id="journalBtn" style="padding:8px 10px;border-radius:999px;">журнал</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card" id="card">
+      <div class="cardTop">
+        <div class="icon" id="stageIcon">🔐</div>
+        <div class="titleWrap">
+          <div class="stageTitle" id="stageTitle">—</div>
+          <div class="stageSub" id="stageSub">—</div>
+        </div>
+      </div>
+
+      <div class="cardBody">
+        <div class="prompt" id="prompt">—</div>
+
+        <div class="panel" id="panel">
+          <!-- dynamic -->
+        </div>
+
+        <div class="toast" id="toast"></div>
+      </div>
+
+      <div class="cardFooter">
+        <button class="btn secondary" id="hintBtn">подсказка</button>
+        <button class="btn secondary" id="backBtn">назад</button>
+        <button class="btn primary" id="nextBtn">дальше</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Journal drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawerTop">
+    <div class="drawerTitle">Журнал фрагментов</div>
+    <button class="btn secondary" id="closeDrawerBtn" style="padding:8px 10px;border-radius:999px;">закрыть</button>
+  </div>
+  <div class="drawerBody">
+    <div class="chipRow" id="chipRow"></div>
+    <div class="muted" id="journalNote"></div>
+  </div>
+</div>
+
+<!-- Final letter overlay -->
+<div class="overlay" id="overlay">
+  <div class="letterWrap">
+    <div class="heartsFX" id="heartsFX"></div>
+    <div class="letterTop">
+      <div class="letterTitle">Письмо для Кисы 💌</div>
+      <div class="seal">доступ открыт</div>
+    </div>
+    <div class="paper" id="paper"></div>
+    <div class="letterBtns">
+      <button class="letterBtn soft" id="rewriteBtn">переписать</button>
+      <button class="letterBtn pink" id="hugBtn">обнять котю</button>
+      <button class="letterBtn soft" id="closeBtn">закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   ТУТ ВСТАВЛЯЕШЬ ТВОЁ ПОЗДРАВЛЕНИЕ
+   (можно много строк, с переносами)
+========================= */
+const FINAL_MESSAGE = `
+Мой любимый Киса!
+
+С днём рождения тебя! 20 лет — это звучит так серьёзно и в то же время невероятно, потому что для меня ты всё тот же мой мальчик, с которым мы 29 января 2024 года вдруг поняли, что всё, это навсегда. Уже больше двух лет ты — самая лучшая часть моей жизни.
+
+Впереди у нас очень взрослый и непростой год. Я знаю, как мы оба паримся из-за этого диплома, какие там бешеные нагрузки и бессонные ночи. Но мы справимся, я рядом, я буду заваривать тебе чай, гладить по голове, когда ты устанешь, и верить в тебя больше всех на свете. Мы вывезем эту сессию и защиту, и я буду так тобой гордиться!
+
+А потом... Потом придёт время, которого я боюсь, но знаю, что оно неизбежно. Когда ты уйдёшь в армию, в доме станет невыносимо тихо. Я буду каждый вечер сворачиваться калачиком на твоей подушке, перечитывать наши переписки и с ума сходить от того, что тебя нет рядом. Но я буду ждать, буду считать дни до твоего возвращения и ни на секунду не усомнюсь в том, что мы — это навсегда.
+
+Ты — мой самый родной человек, моя радость и моё спокойствие. Спасибо тебе за твою заботу, за твой смех и за то, как ты смотришь на меня.
+
+С днём рождения, моя Киса Будь здоров, счастлив и знай: я тебя очень-очень люблю.
+`;
+
+/* =========================
+   Безопасность: проверим, что игры пройдены
+========================= */
+const REQUIRED_FLAGS = [
+  ["game1Complete", "Гонка не пройдена (game1)."],
+  ["game2Complete", "Котики не пройдены (game2)."],
+  ["game3Complete", "Новелла не пройдена (game3)."]
+];
+
+function checkRequired(){
+  for (const [k, msg] of REQUIRED_FLAGS){
+    if (localStorage.getItem(k) !== "true"){
+      return msg;
+    }
+  }
+  return null;
+}
+
+/* =========================
+   Данные квеста
+========================= */
+const QUEST_KEY = "questState_v1";
+const FRAG_KEY  = "questFrags_v1";
+
+/* ФИНАЛЬНЫЙ КОД (он вводит сам) */
+const FINAL_CODE = "9423ACO";
+
+/* Этапы (8, как ты хотела) */
+const STAGES = [
+  {
+    id:"date",
+    icon:"📅",
+    title:"Этап 1 — Дата доступа",
+    sub:"Тема: воспоминание // логика",
+    prompt:
+`29.01.2024
+
+Система: «Преврати дату в один символ.»`,
+    type:"input",
+    placeholder:"введи одну цифру",
+    validate:(v)=> v === "9",
+    hint:[
+      "Подсказка 1: возьми формат ДДММГГ (29 01 24).",
+      "Подсказка 2: сложи все цифры 2+9+0+1+2+4=18, затем 1+8=9."
+    ],
+    onPass:(frags)=> frags.date = "9"
+  },
+  {
+    id:"plate",
+    icon:"🚘",
+    title:"Этап 2 — Номер на дороге",
+    sub:"Тема: машина // шифр букв",
+    prompt:
+`Е972МТ
+
+Система: «Буквы — тоже числа. Дай один символ.»`,
+    type:"input",
+    placeholder:"введи одну цифру",
+    validate:(v)=> v === "4",
+    hint:[
+      "Подсказка 1: возьми латинские буквы E M T (как на номерах).",
+      "Подсказка 2: A1Z26: E=5, M=13, T=20. 5+13+20=38. Первую цифру возьми: 3(8) → 4 мы получаем так: 38+9(из этапа 1)=47, первая цифра 4."
+    ],
+    onPass:(frags)=> frags.plate = "4"
+  },
+  {
+    id:"house",
+    icon:"🏠",
+    title:"Этап 3 — Адрес-ключ",
+    sub:"Тема: дом // внимательность",
+    prompt:
+`9/2
+
+Система: «Не дели. Соедини.»`,
+    type:"input",
+    placeholder:"введи одну цифру",
+    validate:(v)=> v === "2",
+    hint:[
+      "Подсказка 1: это не математика.",
+      "Подсказка 2: «соедини» → получаем 92. Нужна последняя цифра: 2."
+    ],
+    onPass:(frags)=> frags.house = "2"
+  },
+  {
+    id:"kazan",
+    icon:"🌆",
+    title:"Этап 4 — Город начала",
+    sub:"Тема: Казань // буквы",
+    prompt:
+`КАЗАНЬ
+
+Система: «Сколько здесь согласных?»`,
+    type:"input",
+    placeholder:"введи одну цифру",
+    validate:(v)=> v === "3",
+    hint:[
+      "Подсказка 1: считаем только согласные.",
+      "Подсказка 2: К, З, Н = 3. (Ь не считаем как согласную.)"
+    ],
+    onPass:(frags)=> frags.city = "3"
+  },
+  {
+    id:"aot",
+    icon:"⚔️",
+    title:"Этап 5 — Сила ума",
+    sub:"Тема: Attack on Titan // выбор",
+    prompt:
+`Кто чаще думает стратегически, а не импульсивно?`,
+    type:"choice",
+    choices:[
+      { label:"Эрен", ok:false },
+      { label:"Леви", ok:false },
+      { label:"Армин", ok:true }
+    ],
+    hint:[
+      "Подсказка 1: он часто просчитывает и объясняет план.",
+      "Подсказка 2: это Армин."
+    ],
+    onPass:(frags)=> frags.aot = "A"
+  },
+  {
+    id:"initiald",
+    icon:"🛞",
+    title:"Этап 6 — Ночная трасса",
+    sub:"Тема: Initial D // принцип",
+    prompt:
+`Что важнее для победы в ночной гонке?`,
+    type:"choice",
+    choices:[
+      { label:"Мощность", ok:false },
+      { label:"Контроль", ok:true },
+      { label:"Риск", ok:false }
+    ],
+    hint:[
+      "Подсказка 1: это не про «самый громкий мотор».",
+      "Подсказка 2: правильный ответ — Контроль."
+    ],
+    onPass:(frags)=> frags.initiald = "C"
+  },
+  {
+    id:"hug",
+    icon:"💗",
+    title:"Этап 7 — Самое главное",
+    sub:"Тема: вы вдвоём // слово",
+    prompt:
+`В ту ночь… что оказалось важнее слов?
+
+(одно слово)`,
+    type:"input",
+    placeholder:"например: ...",
+    validate:(v)=> {
+      const s = (v||"").trim().toLowerCase();
+      return s === "объятия" || s === "обнимку" || s === "обнимку." || s === "обнимашки";
+    },
+    hint:[
+      "Подсказка 1: это про тепло, а не про разговоры.",
+      "Подсказка 2: подойдёт «объятия» (и близкие варианты)."
+    ],
+    onPass:(frags)=> frags.love = "O"
+  },
+  {
+    id:"final",
+    icon:"🔑",
+    title:"Этап 8 — Финальный доступ",
+    sub:"Тема: сборка ключа // ввод",
+    prompt:
+`Собери код.
+
+Правило:
+1) Цифры идут первыми.
+2) Потом буквы по порядку появления (в журнале).
+3) Введи итоговый код и открой письмо.`,
+    type:"finalInput",
+    placeholder:"введи код",
+    validate:(v)=> (v||"").trim().toUpperCase() === FINAL_CODE,
+    hint:[
+      "Подсказка 1: у тебя должно получиться 7 символов.",
+      "Подсказка 2: правильный код: 9423ACO"
+    ],
+    onPass:(frags)=> frags.final = "✅"
+  }
+];
+
+/* =========================
+   UI refs
+========================= */
+const progressPill = document.getElementById("progressPill");
+const stageIcon = document.getElementById("stageIcon");
+const stageTitle = document.getElementById("stageTitle");
+const stageSub = document.getElementById("stageSub");
+const promptEl = document.getElementById("prompt");
+const panel = document.getElementById("panel");
+const toast = document.getElementById("toast");
+
+const hintBtn = document.getElementById("hintBtn");
+const backBtn = document.getElementById("backBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+const journalBtn = document.getElementById("journalBtn");
+const drawer = document.getElementById("drawer");
+const closeDrawerBtn = document.getElementById("closeDrawerBtn");
+const chipRow = document.getElementById("chipRow");
+const journalNote = document.getElementById("journalNote");
+
+const overlay = document.getElementById("overlay");
+const paper = document.getElementById("paper");
+const rewriteBtn = document.getElementById("rewriteBtn");
+const hugBtn = document.getElementById("hugBtn");
+const closeBtn = document.getElementById("closeBtn");
+const heartsFX = document.getElementById("heartsFX");
+
+/* =========================
+   State
+========================= */
+let state = { i: 0, hintLevel: 0 };
+let frags = {
+  // будем сохранять кусочки (и показывать в журнале)
+  date:null, plate:null, house:null, city:null, aot:null, initiald:null, love:null, final:null
+};
+
+function load(){
+  const rawS = localStorage.getItem(QUEST_KEY);
+  if(rawS){
+    try{ state = JSON.parse(rawS); }catch(e){}
+  }
+  const rawF = localStorage.getItem(FRAG_KEY);
+  if(rawF){
+    try{ frags = JSON.parse(rawF); }catch(e){}
+  }
+}
+function save(){
+  localStorage.setItem(QUEST_KEY, JSON.stringify(state));
+  localStorage.setItem(FRAG_KEY, JSON.stringify(frags));
+}
+load();
+
+/* =========================
+   Journal
+========================= */
+function openJournal(){
+  renderJournal();
+  drawer.classList.add("open");
+}
+function closeJournal(){
+  drawer.classList.remove("open");
+}
+function renderJournal(){
+  chipRow.innerHTML = "";
+
+  const items = [
+    ["Дата", frags.date],
+    ["Номер", frags.plate],
+    ["Дом", frags.house],
+    ["Город", frags.city],
+    ["AoT", frags.aot],
+    ["Initial D", frags.initiald],
+    ["Тепло", frags.love],
+  ];
+
+  items.forEach(([k, v])=>{
+    const d = document.createElement("div");
+    d.className = "chip";
+    d.textContent = v ? `${k}: ${v}` : `${k}: —`;
+    chipRow.appendChild(d);
+  });
+
+  // покажем подсказку про коды игр (если хочешь — это просто “приятно”)
+  const s0 = localStorage.getItem("game1Complete")==="true" ? "S0" : "—";
+  const c4 = localStorage.getItem("game2Complete")==="true" ? "C4" : "—";
+  const h1 = localStorage.getItem("game3Complete")==="true" ? "H1" : "—";
+
+  journalNote.textContent =
+    `Примечание: коды игр сохранены автоматически.
+Гонка: ${s0} • Котики: ${c4} • Новелла: ${h1}
+(они не нужны для финального кода — это просто “память пути”)`;
+}
+
+/* =========================
+   Render stage
+========================= */
+function setToast(msg, ok){
+  toast.textContent = msg || "";
+  toast.classList.remove("ok","no");
+  if(!msg) return;
+  toast.classList.add(ok ? "ok" : "no");
+}
+
+function render(){
+  const need = checkRequired();
+  if(need){
+    // если кто-то открыл quest напрямую
+    stageIcon.textContent = "⛔";
+    stageTitle.textContent = "Доступ закрыт";
+    stageSub.textContent = "Вернись и пройди предыдущие уровни";
+    promptEl.textContent = need + "\n\n(Открой index.html и пройди цепочку игр.)";
+    panel.innerHTML = `<div class="muted">Подсказка: если ты тестируешь — можешь временно поставить в localStorage флаги game1Complete/game2Complete/game3Complete=true.</div>`;
+    hintBtn.disabled = true;
+    backBtn.disabled = true;
+    nextBtn.disabled = true;
+    setToast("", true);
+    return;
+  }
+
+  const stage = STAGES[state.i];
+  progressPill.textContent = `этап ${state.i+1}/${STAGES.length}`;
+
+  stageIcon.textContent = stage.icon;
+  stageTitle.textContent = stage.title;
+  stageSub.textContent = stage.sub;
+  promptEl.textContent = stage.prompt;
+
+  // reset hint level for a new stage
+  state.hintLevel = 0;
+  save();
+
+  // navigation
+  backBtn.disabled = state.i === 0;
+  nextBtn.disabled = stage.type !== "finalInput"; // в финале кнопка "дальше" не нужна, он открывает письмом
+  nextBtn.textContent = (stage.type === "finalInput") ? "—" : "дальше";
+
+  // build panel
+  panel.innerHTML = "";
+  setToast("", true);
+
+  if(stage.type === "input" || stage.type === "finalInput"){
+    const wrap = document.createElement("div");
+    wrap.className = "row";
+
+    const inp = document.createElement("input");
+    inp.className = "input";
+    inp.placeholder = stage.placeholder || "";
+    inp.autocomplete = "off";
+    inp.autocapitalize = "none";
+    inp.spellcheck = false;
+    inp.id = "answerInput";
+
+    const btn = document.createElement("button");
+    btn.className = "btn primary";
+    btn.textContent = (stage.type === "finalInput") ? "открыть письмо" : "проверить";
+
+    btn.onclick = () => {
+      const v = (inp.value || "").trim();
+      if(stage.validate(v)){
+        setToast("✅ Верно. Фрагмент сохранён в журнал.", true);
+        stage.onPass && stage.onPass(frags);
+        save();
+
+        if(stage.id === "final"){
+          openLetter();
+          return;
+        }
+
+        setTimeout(()=>{ goNext(); }, 650);
+      } else {
+        setToast("❌ Неверно. Возьми подсказку, тут всё честно и логично.", false);
+        // лёгкая вибрация на телефоне
+        if(navigator.vibrate) navigator.vibrate(30);
+      }
+    };
+
+    // enter key
+    inp.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter") btn.click();
+    });
+
+    wrap.appendChild(inp);
+    wrap.appendChild(btn);
+    panel.appendChild(wrap);
+
+    const tiny = document.createElement("div");
+    tiny.className = "muted";
+    tiny.textContent = (stage.type === "finalInput")
+      ? "Подсказка: открой «журнал» — там все кусочки."
+      : "Если не уверён — нажми «подсказка» (их две, всё станет ясно).";
+    panel.appendChild(tiny);
+  }
+
+  if(stage.type === "choice"){
+    const wrap = document.createElement("div");
+    wrap.className = "choices";
+
+    stage.choices.forEach(ch=>{
+      const b = document.createElement("button");
+      b.className = "choice";
+      b.textContent = ch.label;
+      b.onclick = () => {
+        if(ch.ok){
+          setToast("✅ Верно. Фрагмент сохранён в журнал.", true);
+          stage.onPass && stage.onPass(frags);
+          save();
+          setTimeout(()=>{ goNext(); }, 650);
+        }else{
+          setToast("❌ Не то. Подсказка поможет выбрать правильную логику.", false);
+          if(navigator.vibrate) navigator.vibrate(30);
+        }
+      };
+      wrap.appendChild(b);
+    });
+
+    panel.appendChild(wrap);
+
+    const tiny = document.createElement("div");
+    tiny.className = "muted";
+    tiny.textContent = "Подсказка: в этом этапе есть 2 уровня подсказки.";
+    panel.appendChild(tiny);
+  }
+
+  // hint button
+  hintBtn.disabled = false;
+  hintBtn.textContent = "подсказка";
+}
+
+/* =========================
+   Navigation
+========================= */
+function goNext(){
+  if(state.i < STAGES.length-1){
+    state.i++;
+    save();
+    render();
+  }
+}
+function goBack(){
+  if(state.i > 0){
+    state.i--;
+    save();
+    render();
+  }
+}
+
+/* =========================
+   Hints
+========================= */
+hintBtn.onclick = () => {
+  const stage = STAGES[state.i];
+  const hints = stage.hint || [];
+  if(!hints.length) return;
+
+  const lvl = state.hintLevel;
+  const msg = hints[Math.min(lvl, hints.length-1)];
+  state.hintLevel = Math.min(lvl+1, hints.length-1);
+  save();
+
+  setToast("💡 " + msg, true);
+};
+
+backBtn.onclick = goBack;
+nextBtn.onclick = goNext;
+
+journalBtn.onclick = openJournal;
+closeDrawerBtn.onclick = closeJournal;
+drawer.addEventListener("click", (e)=>{
+  if(e.target === drawer) closeJournal();
+});
+
+/* =========================
+   Final Letter
+========================= */
+function openLetter(){
+  overlay.style.display = "flex";
+  paper.textContent = FINAL_MESSAGE.trim();
+}
+function closeLetter(){
+  overlay.style.display = "none";
+}
+
+/* “переписать” — просто заново красиво “перечитать” */
+rewriteBtn.onclick = () => {
+  paper.textContent = "";
+  const text = FINAL_MESSAGE.trim();
+  let i = 0;
+  const tick = () => {
+    i++;
+    paper.textContent = text.slice(0, i);
+    if(i < text.length) setTimeout(tick, 10);
+  };
+  tick();
+};
+
+/* “обнять котю” — сердечки + вибрация + мурчание (WebAudio) */
+function purr(){
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine";
+    o.frequency.value = 70;
+    g.gain.value = 0.0001;
+
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+
+    // плавно громче-тише как мур
+    const now = ctx.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.05, now + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+    g.gain.exponentialRampToValueAtTime(0.05, now + 1.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
+
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 1700);
+  }catch(e){}
+}
+
+function heartsBurst(){
+  for(let k=0;k<18;k++){
+    const el = document.createElement("div");
+    el.className = "h";
+    el.textContent = (Math.random() < 0.5) ? "💗" : "💕";
+    el.style.left = (8 + Math.random()*84) + "%";
+    el.style.animationDelay = (Math.random()*180) + "ms";
+    el.style.fontSize = (18 + Math.random()*14) + "px";
+    heartsFX.appendChild(el);
+    setTimeout(()=>el.remove(), 2500);
+  }
+}
+
+hugBtn.onclick = () => {
+  heartsBurst();
+  if(navigator.vibrate) navigator.vibrate([30,30,30]);
+  purr();
+};
+
+closeBtn.onclick = closeLetter;
+overlay.addEventListener("click", (e)=>{
+  if(e.target === overlay) closeLetter();
+});
+
+/* =========================
+   Start render
+========================= */
+render();
+</script>
+</body>
+</html>

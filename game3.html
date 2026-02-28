@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>NIGHT RUN: LOVE EDITION</title>
+
+<style>
+html, body{
+  margin:0; padding:0; height:100%;
+  overflow:hidden;
+  background:#05060a;
+  font-family: Arial, sans-serif;
+  color:#eaf7ff;
+}
+
+#app{
+  position:fixed; inset:0;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Верхняя панель */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 12px;
+  background: rgba(10,12,18,0.75);
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(6px);
+  z-index: 20;
+}
+
+.badge{
+  font-weight:900;
+  letter-spacing:0.5px;
+  color:#7dffda;
+  text-shadow: 0 0 18px rgba(125,255,218,0.35);
+  font-size:14px;
+}
+
+.progress{
+  font-size:12px;
+  opacity:0.85;
+}
+
+/* Сцена (фон) */
+.scene{
+  position:relative;
+  flex:1;
+  overflow:hidden;
+  background:
+    radial-gradient(1200px 600px at 50% 0%, rgba(255,46,99,0.22), transparent 55%),
+    radial-gradient(900px 500px at 80% 40%, rgba(125,255,218,0.18), transparent 60%),
+    linear-gradient(180deg, #070814 0%, #05060a 45%, #090a12 100%);
+}
+
+.neonGrid{
+  position:absolute; inset:0;
+  background:
+    linear-gradient(to right, rgba(125,255,218,0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,46,99,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  transform: perspective(600px) rotateX(68deg) translateY(120px);
+  transform-origin: bottom;
+  opacity:0.65;
+}
+
+.horizon{
+  position:absolute; left:0; right:0;
+  top:25%;
+  height:2px;
+  background: linear-gradient(to right, transparent, rgba(125,255,218,0.55), transparent);
+  box-shadow: 0 0 24px rgba(125,255,218,0.35);
+}
+
+.city{
+  position:absolute;
+  left:0; right:0;
+  bottom:30%;
+  height:22%;
+  background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0));
+}
+.building{
+  position:absolute; bottom:0;
+  width:34px;
+  background:#0b0d14;
+  border:1px solid rgba(255,255,255,0.06);
+  border-bottom:none;
+  box-shadow: 0 0 20px rgba(255,46,99,0.08);
+}
+.windowDot{
+  position:absolute;
+  width:3px; height:3px;
+  background: rgba(255,235,120,0.75);
+  border-radius:2px;
+  box-shadow: 0 0 10px rgba(255,235,120,0.35);
+}
+
+/* “Скорость” */
+.speed{
+  position:absolute; inset:0;
+  pointer-events:none;
+  opacity:0.45;
+}
+.streak{
+  position:absolute;
+  width:2px;
+  height:80px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.65), transparent);
+  animation: streak 1050ms linear infinite;
+}
+@keyframes streak{
+  from{ transform: translateY(-20vh); opacity:0; }
+  20%{ opacity:0.7; }
+  to{ transform: translateY(120vh); opacity:0; }
+}
+
+/* ====== ПЕРСОНАЖИ (СПРАЙТЫ НАД ДИАЛОГОМ) ====== */
+.spriteLayer{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index: 8;
+}
+.sprite{
+  position:absolute;
+  bottom: 140px;
+  width: min(54vw, 300px);
+  max-height: 66vh;
+  object-fit: contain;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 240ms ease, transform 240ms ease, filter 240ms ease;
+  filter: drop-shadow(0 18px 28px rgba(0,0,0,0.55));
+}
+.sprite.left{ left: 6px; }
+.sprite.right{ right: 6px; }
+.sprite.show{ opacity: 1; transform: translateY(0); }
+.sprite.dim{
+  opacity: 0.62;
+  filter: brightness(0.82) drop-shadow(0 18px 28px rgba(0,0,0,0.55));
+}
+@media (max-width: 380px){
+  .sprite{ width: min(56vw, 270px); bottom: 132px; }
+}
+
+/* Окно диалога */
+.dialog{
+  position:absolute;
+  left:12px; right:12px; bottom:12px;
+  background: rgba(10,12,18,0.88);
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:20px;
+  box-shadow: 0 16px 60px rgba(0,0,0,0.6);
+  padding:12px 12px 10px;
+  backdrop-filter: blur(6px);
+  z-index: 12;
+}
+
+.nameRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+  gap:10px;
+}
+.name{
+  font-weight:900;
+  color:#ff2e63;
+  letter-spacing:0.3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.meta{
+  font-size:12px;
+  opacity:0.75;
+  flex: 0 0 auto;
+}
+
+.text{
+  font-size:15px;
+  line-height:1.38;
+  color:#eaf7ff;
+  min-height:76px;
+  white-space:pre-wrap;
+}
+
+.choices{
+  display:none;
+  margin-top:10px;
+  gap:10px;
+  flex-direction:column;
+}
+.choiceBtn{
+  text-align:left;
+  padding:12px 12px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.07);
+  color:#eaf7ff;
+  font-weight:800;
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.btn{
+  flex:1;
+  padding:12px 12px;
+  border-radius:16px;
+  border:none;
+  font-weight:900;
+  color:#0b0d14;
+  background:#7dffda;
+}
+.btn.secondary{
+  background: rgba(255,255,255,0.10);
+  color:#eaf7ff;
+  border:1px solid rgba(255,255,255,0.16);
+}
+.btn:disabled{ opacity:0.45; }
+
+/* Подсказка */
+.hintTap{ margin-top:6px; font-size:11px; opacity:0.55; }
+
+/* Победа/код */
+.overlay{
+  position:fixed; inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,0.88);
+  z-index:100;
+  text-align:center;
+  padding:18px;
+}
+.winCard{
+  width:min(560px, 92vw);
+  background: rgba(10,12,18,0.90);
+  border:1px solid rgba(255,255,255,0.16);
+  border-radius:22px;
+  padding:18px 16px;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.75);
+}
+.winTitle{
+  color:#7dffda;
+  font-weight:1000;
+  letter-spacing:0.6px;
+  margin-bottom:10px;
+}
+.code{
+  font-size:54px;
+  font-weight:1100;
+  color:#7dffda;
+  text-shadow: 0 0 20px rgba(125,255,218,0.45);
+  margin:10px 0;
+}
+.winSub{ opacity:0.9; margin-top:6px; }
+</style>
+</head>
+
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="badge">NIGHT RUN // LOVE EDITION</div>
+    <div class="progress" id="progress">—</div>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="horizon"></div>
+    <div class="city" id="city"></div>
+    <div class="neonGrid"></div>
+    <div class="speed" id="speed"></div>
+
+    <div class="spriteLayer" id="spriteLayer">
+      <img class="sprite left" id="spriteLeft" alt="left sprite" />
+      <img class="sprite right" id="spriteRight" alt="right sprite" />
+    </div>
+
+    <div class="dialog" id="dialog">
+      <div class="nameRow">
+        <div class="name" id="speaker">—</div>
+        <div class="meta" id="chapter">—</div>
+      </div>
+
+      <div class="text" id="text"></div>
+      <div class="hintTap" id="hintTap">тапни по тексту, чтобы допечатать быстрее</div>
+
+      <div class="choices" id="choices"></div>
+
+      <div class="controls">
+        <button class="btn secondary" id="resetBtn">сначала</button>
+        <button class="btn secondary" id="backBtn">назад</button>
+        <button class="btn" id="nextBtn">дальше</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="winCard">
+    <div class="winTitle">КОД ПОЛУЧЕН</div>
+    <div class="code">H1</div>
+    <div class="winSub">Сохранено. Дальше будет квест…</div>
+  </div>
+</div>
+
+<script>
+const SAVE_KEY = "game3State_v3_sprites";
+const COMPLETE_KEY = "game3Complete";
+
+const SPRITES = {
+  system:  "assets/sprites/system.png",
+  mikasa:  "assets/sprites/mikasa.png",
+  levi:    "assets/sprites/levi.png",
+  armin:   "assets/sprites/armin.png",
+  eren:    "assets/sprites/eren.png",
+  takumi:  "assets/sprites/takumi.png",
+  ryosuke: "assets/sprites/ryosuke.png",
+};
+
+const CHAR = {
+  system:  { name:"Система", color:"#7dffda" },
+  you:     { name:"Ты",      color:"#ff2e63" },
+  mikasa:  { name:"Микаса",  color:"#ff5b8c" },
+  levi:    { name:"Леви",    color:"#a8ffea" },
+  armin:   { name:"Армин",   color:"#7dd7ff" },
+  eren:    { name:"Эрен",    color:"#ffcc66" },
+  takumi:  { name:"Такуми",  color:"#7dffda" },
+  ryosuke: { name:"Рёске",   color:"#b7b7ff" },
+};
+
+const STORY = [
+  { type:"label", id:"start" },
+  { type:"line", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"00:19.\nНочь гладкая, как плёнка на старой кассете.\nНеон дрожит в воздухе. Дорога тянется вперёд — будто мир состоит из одного длинного «сейчас»." },
+  { type:"line", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"На экране всплывает сообщение:\n«LEVEL 20: ДОСТУП ОТКРЫТ».\nИ ниже — ещё одно, куда более личное:\n«Сегодня твой день.»" },
+  { type:"line", ch:"ГЛАВА 1", who:"you", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"…Мой день? Что за странная игра?" },
+  { type:"line", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Это не игра про скорость.\nЭто история про то, как одна встреча может стать домом.\nИ про то, почему некоторые люди… становятся твоей тишиной." },
+
+  { type:"choice", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    q:"Дорога пустая. Тебе предлагают выбрать настрой на эту ночь:",
+    options:[
+      { t:"Спокойно. Я не спешу — я проживаю.", set:{ mood:"calm" }, next:"mood_calm" },
+      { t:"Смело. Я еду вперёд, пока сердце не скажет «стоп».", set:{ mood:"brave" }, next:"mood_brave" },
+      { t:"Внимательно. Я замечаю детали — в них смысл.", set:{ mood:"focus" }, next:"mood_focus" },
+    ]},
+
+  { type:"label", id:"mood_calm" },
+  { type:"line", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Спокойствие — это не медленно.\nЭто когда внутри не шумит.\nТы едешь ровно и увереннее, чем кажется." },
+  { type:"jump", to:"after_mood" },
+
+  { type:"label", id:"mood_brave" },
+  { type:"line", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Смелость — это не риск.\nЭто когда ты не прячешься от чувств.\nТы нажимаешь на газ — но не теряешь себя." },
+  { type:"jump", to:"after_mood" },
+
+  { type:"label", id:"mood_focus" },
+  { type:"line", ch:"ГЛАВА 1", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Внимание — это суперсила.\nТе, кто видят детали, редко ошибаются в главном.\nТы запоминаешь эту ночь кадрами." },
+  { type:"jump", to:"after_mood" },
+
+  { type:"label", id:"after_mood" },
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Смена сцены.\nНеон становится мягче.\nИ ты вдруг слышишь музыку издалека — как будто где-то включили старый магнитофон." },
+
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Ты оказываешься… дома.\nНе буквально — но ощущением.\nТёплый свет, чужие голоса на фоне, смех, стаканы, простая радость «сегодня хорошо»." },
+  { type:"line", ch:"ГЛАВА 2", who:"you", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"…Странно. Я будто вспоминаю." },
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"В ту ночь кто-то привёл друзей.\nТы не строил планов.\nТы просто был там.\nИ этого оказалось достаточно, чтобы мир чуть-чуть повернулся в сторону счастья." },
+
+  { type:"line", ch:"ГЛАВА 2", who:"mikasa", sprite:{ left:"mikasa", right:null, focus:"left" },
+    tx:"Иногда всё решает один взгляд.\nНе громкий.\nПростой.\nНо такой, после которого ты уже не хочешь жить «как раньше»." },
+  { type:"line", ch:"ГЛАВА 2", who:"you", sprite:{ left:"mikasa", right:null, focus:"left" },
+    tx:"Почему ты здесь?" },
+  { type:"line", ch:"ГЛАВА 2", who:"mikasa", sprite:{ left:"mikasa", right:null, focus:"left" },
+    tx:"Потому что я понимаю, что такое — выбрать.\nИ защитить свой выбор.\nДаже если вокруг шумно." },
+
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Ты видишь его впервые в этой истории.\nНикакой пафосной музыки.\nНикакого «замедленного кадра».\nПросто — «вот он».\nИ сердце почему-то становится тише." },
+
+  { type:"choice", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    q:"Что ты делаешь в тот самый момент, когда понимаешь: это важно?",
+    options:[
+      { t:"Смотрю прямо. Не отвожу взгляд.", set:{ bond:(s)=> (s.bond||0)+2 }, next:"bond2" },
+      { t:"Улыбаюсь, потому что иначе не получается.", set:{ bond:(s)=> (s.bond||0)+3 }, next:"bond3" },
+      { t:"Смущаюсь. Отвожу глаза — но возвращаюсь взглядом.", set:{ bond:(s)=> (s.bond||0)+1 }, next:"bond1" },
+    ]},
+
+  { type:"label", id:"bond3" },
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Улыбка — это смелость, спрятанная в тепле.\nТы не играешь роль.\nТы просто — ты." },
+  { type:"jump", to:"kiss_scene" },
+
+  { type:"label", id:"bond2" },
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Ты смотришь прямо.\nИ в этом взгляде нет вызова.\nТолько честность." },
+  { type:"jump", to:"kiss_scene" },
+
+  { type:"label", id:"bond1" },
+  { type:"line", ch:"ГЛАВА 2", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Смущение — не слабость.\nЭто когда чувство слишком настоящее.\nИ ты всё равно выбираешь остаться." },
+  { type:"jump", to:"kiss_scene" },
+
+  { type:"label", id:"kiss_scene" },
+  { type:"line", ch:"ГЛАВА 3", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Дальше всё происходит тихо.\nТак, как бывает только в реальной жизни.\nСлова — где-то на втором плане.\nА ближе всего — дыхание." },
+  { type:"line", ch:"ГЛАВА 3", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Вы находите друг друга в толпе без усилий.\nКак будто это было решено заранее.\nИ вдруг — поцелуй.\nНе «идеальный».\nЗато тот самый." },
+  { type:"line", ch:"ГЛАВА 3", who:"levi", sprite:{ left:"levi", right:null, focus:"left" },
+    tx:"Не усложняй.\nЕсли ты понял — действуй.\nВ жизни часто не дают второй попытки." },
+  { type:"line", ch:"ГЛАВА 3", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Ночь становится мягкой.\nВы засыпаете рядом.\nБез обещаний.\nБез громких заявлений.\nПросто — в обнимку.\nКак будто так и должно быть." },
+  { type:"line", ch:"ГЛАВА 3", who:"you", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"…Я помню." },
+
+  { type:"line", ch:"ГЛАВА 4", who:"takumi", sprite:{ left:"takumi", right:"ryosuke", focus:"left" },
+    tx:"Дорога — это не только повороты.\nЭто ещё и то, кто сидит рядом.\nИногда самое важное — не скорость.\nА чувство, что ты не один." },
+  { type:"line", ch:"ГЛАВА 4", who:"ryosuke", sprite:{ left:"takumi", right:"ryosuke", focus:"right" },
+    tx:"Если хочешь выиграть — контролируй ритм.\nНе дёргайся.\nНе суетись.\nВсё настоящее едет ровно." },
+
+  { type:"line", ch:"ГЛАВА 4", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Сегодня тебе двадцать.\nИ эта история не про то, что было.\nОна про то, что стало.\nПро то, что ты — чья-то опора.\nИ чья-то нежность." },
+
+  { type:"choice", ch:"ГЛАВА 4", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    q:"Проверка перед финалом.\nЧто сильнее всего удерживает любовь на дороге жизни?",
+    options:[
+      { t:"Стабильность и тепло. Когда рядом спокойно.", set:{ seal:"ok" }, next:"seal_ok" },
+      { t:"Только страсть. Только вспышки.", set:{ seal:"no" }, next:"seal_no" },
+      { t:"Игры и проверки. Пусть доказывает.", set:{ seal:"no" }, next:"seal_no" },
+    ]},
+
+  { type:"label", id:"seal_no" },
+  { type:"line", ch:"ГЛАВА 4", who:"armin", sprite:{ left:"armin", right:null, focus:"left" },
+    tx:"Подумай ещё раз.\nСтрасть — это прекрасно.\nНо дом строится не на вспышках.\nА на тепле, которое возвращается каждый день." },
+  { type:"jump", to:"seal_repeat" },
+
+  { type:"label", id:"seal_repeat" },
+  { type:"choice", ch:"ГЛАВА 4", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    q:"Попробуй снова. Что удерживает любовь?",
+    options:[
+      { t:"Стабильность и тепло. Когда рядом спокойно.", set:{ seal:"ok" }, next:"seal_ok" },
+      { t:"Только страсть. Только вспышки.", set:{ seal:"no" }, next:"seal_no" },
+      { t:"Игры и проверки. Пусть доказывает.", set:{ seal:"no" }, next:"seal_no" },
+    ]},
+
+  { type:"label", id:"seal_ok" },
+  { type:"line", ch:"ГЛАВА 5", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Верно.\nФинальная сцена открывается.\nИ теперь — самое главное." },
+  { type:"line", ch:"ГЛАВА 5", who:"system", sprite:{ left:"system", right:null, focus:"left" },
+    tx:"Ты прошёл дорогу.\nТы выбрал правильно.\nА теперь — забери то, что нужно для финального поздравления." },
+
+  { type:"end" },
+];
+
+/* UI */
+const speakerEl = document.getElementById("speaker");
+const chapterEl = document.getElementById("chapter");
+const textEl = document.getElementById("text");
+const choicesEl = document.getElementById("choices");
+const nextBtn = document.getElementById("nextBtn");
+const backBtn = document.getElementById("backBtn");
+const resetBtn = document.getElementById("resetBtn");
+const progressEl = document.getElementById("progress");
+const overlay = document.getElementById("overlay");
+const speedEl = document.getElementById("speed");
+const cityEl = document.getElementById("city");
+const dialogEl = document.getElementById("dialog");
+const spriteLeftEl = document.getElementById("spriteLeft");
+const spriteRightEl = document.getElementById("spriteRight");
+
+/* Визуал */
+function buildSpeed(){
+  for(let i=0;i<18;i++){
+    const s=document.createElement("div");
+    s.className="streak";
+    s.style.left = (Math.random()*100) + "vw";
+    s.style.animationDelay = (Math.random()*1050) + "ms";
+    s.style.height = (50 + Math.random()*140) + "px";
+    speedEl.appendChild(s);
+  }
+}
+function buildCity(){
+  const w = window.innerWidth;
+  const count = Math.max(12, Math.floor(w/28));
+  for(let i=0;i<count;i++){
+    const b=document.createElement("div");
+    b.className="building";
+    b.style.left = (i*(w/count)) + "px";
+    b.style.width = (16 + Math.random()*40) + "px";
+    b.style.height = (40 + Math.random()*140) + "px";
+    cityEl.appendChild(b);
+
+    const dots = 6 + Math.floor(Math.random()*10);
+    for(let d=0; d<dots; d++){
+      const dot=document.createElement("div");
+      dot.className="windowDot";
+      dot.style.left = (4 + Math.random()* (parseFloat(b.style.width)-10)) + "px";
+      dot.style.top  = (6 + Math.random()* (parseFloat(b.style.height)-16)) + "px";
+      dot.style.opacity = (0.20 + Math.random()*0.70).toFixed(2);
+      b.appendChild(dot);
+    }
+  }
+}
+buildSpeed();
+buildCity();
+
+/* preload */
+(function preloadSprites(){
+  Object.values(SPRITES).forEach(src=>{
+    const img = new Image();
+    img.src = src;
+  });
+})();
+
+/* state */
+let state = { i:0, vars:{}, history:[] };
+
+function load(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return;
+  try{
+    const obj = JSON.parse(raw);
+    if(typeof obj.i === "number") state = obj;
+  }catch(e){}
+}
+function save(){ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+load();
+
+function findLabel(id){ return STORY.findIndex(n => n.type==="label" && n.id===id); }
+function setVar(key, val){
+  if(typeof val === "function") state.vars[key] = val(state.vars);
+  else state.vars[key] = val;
+}
+
+/* typewriter */
+let typing=false, typeTimer=null, fullText="", shown=0;
+const TYPE_SPEED_MS=22, PUNCT_PAUSE_MS=160;
+
+function stopTyping(){
+  if(typeTimer) clearTimeout(typeTimer);
+  typeTimer=null; typing=false;
+}
+function startTyping(text){
+  stopTyping();
+  typing=true; fullText=text; shown=0;
+  textEl.textContent="";
+  nextBtn.disabled=true;
+
+  const step=()=>{
+    if(!typing) return;
+    shown++;
+    textEl.textContent = fullText.slice(0, shown);
+    if(shown >= fullText.length){
+      typing=false;
+      nextBtn.disabled=false;
+      return;
+    }
+    const ch=fullText[shown-1];
+    const pause = (".,!?…\n".includes(ch)) ? PUNCT_PAUSE_MS : TYPE_SPEED_MS;
+    typeTimer=setTimeout(step, pause);
+  };
+  step();
+}
+function finishTypingNow(){
+  if(!typing) return;
+  stopTyping();
+  textEl.textContent=fullText;
+  nextBtn.disabled=false;
+}
+dialogEl.addEventListener("click",(e)=>{
+  const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+  if(tag==="button") return;
+  finishTypingNow();
+});
+
+/* sprites */
+function setSprite(el, key){
+  if(!key || !SPRITES[key]){
+    el.classList.remove("show","dim");
+    el.removeAttribute("src");
+    return;
+  }
+  if(el.getAttribute("src") !== SPRITES[key]) el.src = SPRITES[key];
+  el.classList.add("show");
+}
+function applySprites(node){
+  const s = node.sprite || {};
+  const leftKey = s.left || null;
+  const rightKey = s.right || null;
+
+  setSprite(spriteLeftEl, leftKey);
+  setSprite(spriteRightEl, rightKey);
+
+  if(!leftKey){ spriteLeftEl.classList.remove("show","dim"); spriteLeftEl.removeAttribute("src"); }
+  if(!rightKey){ spriteRightEl.classList.remove("show","dim"); spriteRightEl.removeAttribute("src"); }
+
+  spriteLeftEl.classList.remove("dim");
+  spriteRightEl.classList.remove("dim");
+
+  if(leftKey && rightKey){
+    if(s.focus==="left") spriteRightEl.classList.add("dim");
+    if(s.focus==="right") spriteLeftEl.classList.add("dim");
+  }
+}
+
+/* render */
+function updateProgress(){
+  progressEl.textContent = `прогресс: ${Math.min(100, Math.round((state.i / (STORY.length-1))*100))}%`;
+}
+function applyWho(who){
+  const c = CHAR[who] || { name: who, color:"#ff2e63" };
+  speakerEl.textContent = c.name;
+  speakerEl.style.color = c.color;
+}
+function showChoices(node){
+  choicesEl.style.display="flex";
+  choicesEl.innerHTML="";
+  nextBtn.disabled=true;
+
+  node.options.forEach(opt=>{
+    const btn=document.createElement("button");
+    btn.className="choiceBtn";
+    btn.textContent=opt.t;
+    btn.onclick=()=>{
+      if(opt.set) Object.keys(opt.set).forEach(k=> setVar(k, opt.set[k]));
+      const idx=findLabel(opt.next);
+      if(idx>=0){
+        state.history.push(state.i);
+        state.i=idx+1;
+        save();
+        render();
+      }
+    };
+    choicesEl.appendChild(btn);
+  });
+}
+function render(){
+  updateProgress();
+  while(STORY[state.i] && STORY[state.i].type==="label") state.i++;
+
+  const node=STORY[state.i];
+  if(!node) return;
+
+  choicesEl.style.display="none";
+
+  if(node.type==="jump"){
+    const idx=findLabel(node.to);
+    if(idx>=0){ state.i=idx+1; save(); render(); return; }
+  }
+
+  if(node.type==="line"){
+    chapterEl.textContent=node.ch;
+    applyWho(node.who);
+    applySprites(node);
+    startTyping(node.tx);
+  }
+
+  if(node.type==="choice"){
+    chapterEl.textContent=node.ch;
+    applyWho(node.who);
+    applySprites(node);
+    startTyping(node.q);
+    const wait=()=>{ if(typing) return setTimeout(wait,30); showChoices(node); };
+    wait();
+  }
+
+  if(node.type==="end"){
+    localStorage.setItem(COMPLETE_KEY,"true");
+    overlay.style.display="flex";
+    setTimeout(()=>{ window.location.href="quest.html"; },3200);
+    return;
+  }
+
+  save();
+}
+render();
+
+/* buttons */
+resetBtn.onclick = () => {
+  localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(COMPLETE_KEY);
+  // не трогаем game1/game2
+  location.reload();
+};
+
+nextBtn.onclick=()=>{
+  if(typing){ finishTypingNow(); return; }
+  const node=STORY[state.i];
+  if(node && node.type==="choice") return;
+  state.history.push(state.i);
+  state.i++;
+  save();
+  render();
+};
+
+backBtn.onclick=()=>{
+  if(typing){ finishTypingNow(); return; }
+  if(state.history.length===0) return;
+  state.i=state.history.pop();
+  save();
+  render();
+};
+</script>
+</body>
+</html>
